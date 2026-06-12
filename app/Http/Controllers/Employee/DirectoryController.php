@@ -13,9 +13,13 @@ class DirectoryController extends Controller
     public function __invoke(Request $request): Response
     {
         $search = trim((string) $request->query('q', ''));
+        $today = \Carbon\Carbon::today();
 
         $employees = User::query()
             ->where('role', 'employee')
+            ->with(['attendances' => function ($q) use ($today) {
+                $q->whereDate('work_date', $today)->with('breaks');
+            }])
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -28,18 +32,40 @@ class DirectoryController extends Controller
             ->get(['id', 'name', 'username', 'email', 'phone', 'designation', 'department', 'avatar_path', 'joined_on']);
 
         return Inertia::render('Employee/Directory', [
-            'employees' => $employees->map(fn ($u) => [
-                'id'          => $u->id,
-                'name'        => $u->name,
-                'username'    => $u->username,
-                'email'       => $u->email,
-                'phone'       => $u->phone,
-                'designation' => $u->designation,
-                'department'  => $u->department,
-                'avatar_url'  => $u->avatar_url,
-                'joined_on'   => $u->joined_on?->toDateString(),
-            ]),
+            'employees' => $employees->map(function ($u) {
+                $todayAtt = $u->attendances->first();
+                $status = 'Not In';
+                $time = null;
+
+                if ($todayAtt) {
+                    if ($todayAtt->check_out_at) {
+                        $status = 'Checked Out';
+                        $time = $todayAtt->check_out_at->format('H:i');
+                    } elseif ($todayAtt->openBreak()) {
+                        $status = 'On Break';
+                        $time = $todayAtt->openBreak()->break_in_at->format('H:i');
+                    } elseif ($todayAtt->check_in_at) {
+                        $status = 'Active';
+                        $time = $todayAtt->check_in_at->format('H:i');
+                    }
+                }
+
+                return [
+                    'id'          => $u->id,
+                    'name'        => $u->name,
+                    'username'    => $u->username,
+                    'email'       => $u->email,
+                    'phone'       => $u->phone,
+                    'designation' => $u->designation,
+                    'department'  => $u->department,
+                    'avatar_url'  => $u->avatar_url,
+                    'joined_on'   => $u->joined_on?->toDateString(),
+                    'status'      => $status,
+                    'status_time' => $time,
+                ];
+            }),
             'filters'   => ['q' => $search],
+            'isAdmin'   => $request->user()->isAdmin(),
         ]);
     }
 }

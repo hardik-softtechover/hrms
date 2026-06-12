@@ -17,6 +17,7 @@ class AttendanceController extends Controller
     public function index(Request $request): Response
     {
         $rows = Attendance::where('user_id', $request->user()->id)
+            ->with(['notes.user' => fn($q) => $q->select('id', 'name')])
             ->orderByDesc('work_date')
             ->limit(60)
             ->get();
@@ -30,6 +31,12 @@ class AttendanceController extends Controller
                 'total_break_seconds' => $a->total_break_seconds,
                 'staffing_seconds'    => $a->staffing_seconds,
                 'completed'           => $a->staffing_seconds >= self::TARGET_SECONDS,
+                'notes'               => $a->notes->map(fn($n) => [
+                    'id'         => $n->id,
+                    'content'    => $n->content,
+                    'user_name'  => $n->user->name,
+                    'created_at' => $n->created_at->diffForHumans(),
+                ]),
             ];
         });
 
@@ -114,6 +121,22 @@ class AttendanceController extends Controller
         ]);
 
         return back()->with('success', 'Checked out. See you tomorrow!');
+    }
+
+    public function updateNote(Request $request, Attendance $attendance): RedirectResponse
+    {
+        abort_unless($attendance->user_id === $request->user()->id, 403);
+
+        $data = $request->validate([
+            'note' => ['required', 'string', 'max:500'],
+        ]);
+
+        $attendance->notes()->create([
+            'user_id' => $request->user()->id,
+            'content' => $data['note'],
+        ]);
+
+        return back()->with('success', 'Note added.');
     }
 
     private function todayAttendance(Request $request): ?Attendance

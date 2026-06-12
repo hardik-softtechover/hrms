@@ -42,6 +42,7 @@ Route::middleware(['auth', 'employee'])->prefix('me')->name('employee.')->group(
     Route::post('/leaves', [EmployeeLeaveController::class, 'store'])->name('leaves.store');
 
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance');
+    Route::post('/attendance/{attendance}/note', [AttendanceController::class, 'updateNote'])->name('attendance.note');
     Route::post('/attendance/check-in',  [AttendanceController::class, 'checkIn'])->name('attendance.checkin');
     Route::post('/attendance/break-in',  [AttendanceController::class, 'breakIn'])->name('attendance.breakin');
     Route::post('/attendance/break-out', [AttendanceController::class, 'breakOut'])->name('attendance.breakout');
@@ -56,7 +57,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/employees',          [AdminEmployeeController::class, 'index'])->name('employees.index');
     Route::post('/employees',         [AdminEmployeeController::class, 'store'])->name('employees.store');
+    Route::put('/employees/{employee}', [AdminEmployeeController::class, 'update'])->name('employees.update');
+    Route::get('/employees/{employee}/attendance', [AdminEmployeeController::class, 'attendance'])->name('employees.attendance');
+    Route::put('/attendance/{attendance}', [AdminEmployeeController::class, 'updateAttendance'])->name('attendance.update');
     Route::delete('/employees/{employee}', [AdminEmployeeController::class, 'destroy'])->name('employees.destroy');
+
+    Route::get('/directory', DirectoryController::class)->name('directory');
 
     Route::get('/leaves',                  [AdminLeaveController::class, 'index'])->name('leaves.index');
     Route::post('/leaves/{leave}/approve', [AdminLeaveController::class, 'approve'])->name('leaves.approve');

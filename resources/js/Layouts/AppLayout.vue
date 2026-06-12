@@ -21,6 +21,7 @@ const adminNav = [
     { name: 'Dashboard', href: '/admin',           icon: 'home' },
     { name: 'Employees', href: '/admin/employees', icon: 'users' },
     { name: 'Leaves',    href: '/admin/leaves',    icon: 'calendar' },
+    { name: 'Directory', href: '/admin/directory', icon: 'users' },
     { name: 'Events',    href: '/events',          icon: 'star' },
     { name: 'Profile',   href: '/me/profile',      icon: 'user' },
 ];

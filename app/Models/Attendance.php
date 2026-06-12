@@ -26,6 +26,11 @@ class Attendance extends Model
         return $this->hasMany(AttendanceBreak::class);
     }
 
+    public function notes(): HasMany
+    {
+        return $this->hasMany(AttendanceNote::class)->latest();
+    }
+
     public function openBreak(): ?AttendanceBreak
     {
         return $this->breaks()->whereNull('break_out_at')->latest()->first();
